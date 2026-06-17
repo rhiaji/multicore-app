@@ -886,61 +886,7 @@ retry: { maxAttempts: 3 },`}</CodeBlock>
           </div>
         </main>
 
-        {/* ── right TOC ── */}
-        <aside className="hidden xl:flex w-56 shrink-0 flex-col sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto py-10 px-5 border-l border-border">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 mb-4">
-            On this page
-          </p>
-          <ul className="flex flex-col gap-1 flex-1">
-            {TOC.map((item) => {
-              const isActive = activeHash === item.href
-              return (
-                <li key={item.href}>
-                  <a
-                    href={item.href}
-                    className={`block text-xs py-1 leading-relaxed transition-colors ${
-                      isActive
-                        ? "text-primary font-medium"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {item.label}
-                  </a>
-                </li>
-              )
-            })}
-          </ul>
 
-          <div className="pt-6 mt-6 border-t border-border flex flex-col gap-2.5">
-            <a
-              href="https://github.com/rhiaji/multicore-app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <GithubIcon className="size-3" />
-              View on GitHub
-            </a>
-            <a
-              href="https://github.com/rhiaji/multicore-app/fork"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <GitFork className="size-3" />
-              Fork repository
-            </a>
-            <a
-              href="https://peakd.com/@rhiaji"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ExternalLink className="size-3" />
-              @rhiaji on PeakD
-            </a>
-          </div>
-        </aside>
 
       </div>
 
