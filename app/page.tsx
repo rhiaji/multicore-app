@@ -304,7 +304,7 @@ export default function DocsPage() {
             href="/dashboard"
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-primary/40 bg-primary/8 text-primary text-xs font-semibold hover:bg-primary/15 hover:border-primary/60 transition-all uppercase tracking-wider"
           >
-            Open App
+            App
             <ArrowRight className="size-3" />
           </Link>
         </div>
