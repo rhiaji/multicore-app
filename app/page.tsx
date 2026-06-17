@@ -59,20 +59,20 @@ const NAV = [
       { label: "Relic Market", href: "#feature-relic-market" },
     ],
   },
-    {
-      group: "Self-Hosting",
-      items: [
-        { label: "Environment", href: "#env" },
-        { label: "Deployment", href: "#deployment" },
-        { label: "Automations", href: "#automations" },
-        { label: "Required env vars", href: "#automations-env" },
-        { label: "Claim & Battle", href: "#automations-claim" },
-        { label: "Auto Quest", href: "#automations-quest" },
-        { label: "Token Transfer", href: "#automations-transfer" },
-        { label: "Relic Market", href: "#automations-relic" },
-        { label: "Terracore (combined)", href: "#automations-terracore" },
-      ],
-    },
+  {
+    group: "Self-Hosting",
+    items: [
+      { label: "Environment", href: "#env" },
+      { label: "Deployment", href: "#deployment" },
+      { label: "Automations", href: "#automations" },
+      { label: "Required env vars", href: "#automations-env" },
+      { label: "Claim & Battle", href: "#automations-claim" },
+      { label: "Auto Quest", href: "#automations-quest" },
+      { label: "Token Transfer", href: "#automations-transfer" },
+      { label: "Relic Market", href: "#automations-relic" },
+      { label: "Terracore (combined)", href: "#automations-terracore" },
+    ],
+  },
   {
     group: "Project",
     items: [
