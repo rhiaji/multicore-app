@@ -230,6 +230,7 @@ export function RcOverviewPanel({ open, onClose, usernames, inline = false }: Rc
           onOpenChange={(v) => { if (!v) setDelegateTarget(null) }}
           targetUsername={delegateTarget.username}
           currentRcPercent={delegateTarget.rcPercent}
+          allUsernames={usernames}
         />
       )}
     </>
