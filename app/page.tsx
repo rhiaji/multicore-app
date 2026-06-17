@@ -32,35 +32,35 @@ const NAV = [
   {
     group: "Overview",
     items: [
-      { label: "Introduction",  href: "#introduction" },
-      { label: "How it works",  href: "#how-it-works" },
-      { label: "Security",      href: "#security" },
+      { label: "Introduction", href: "#introduction" },
+      { label: "How it works", href: "#how-it-works" },
+      { label: "Security", href: "#security" },
     ],
   },
   {
     group: "Getting Started",
     items: [
-      { label: "Prerequisites",    href: "#prerequisites" },
-      { label: "Installation",     href: "#installation" },
-      { label: "Configuration",    href: "#configuration" },
+      { label: "Prerequisites", href: "#prerequisites" },
+      { label: "Installation", href: "#installation" },
+      { label: "Configuration", href: "#configuration" },
     ],
   },
   {
     group: "Features",
     items: [
-      { label: "Dashboard",       href: "#feature-dashboard" },
-      { label: "Auto Claim",      href: "#feature-auto-claim" },
-      { label: "Auto Quest",      href: "#feature-auto-quest" },
-      { label: "Token Transfer",  href: "#feature-token-transfer" },
-      { label: "Relic Market",    href: "#feature-relic-market" },
+      { label: "Dashboard", href: "#feature-dashboard" },
+      { label: "Auto Claim", href: "#feature-auto-claim" },
+      { label: "Auto Quest", href: "#feature-auto-quest" },
+      { label: "Token Transfer", href: "#feature-token-transfer" },
+      { label: "Relic Market", href: "#feature-relic-market" },
     ],
   },
   {
     group: "Self-Hosting",
     items: [
-      { label: "Environment",  href: "#env" },
-      { label: "Deployment",   href: "#deployment" },
-      { label: "Automations",  href: "#automations" },
+      { label: "Environment", href: "#env" },
+      { label: "Deployment", href: "#deployment" },
+      { label: "Automations", href: "#automations" },
     ],
   },
   {
@@ -74,18 +74,18 @@ const NAV = [
 // ─── TOC ────────────────────────────────────────────────────────────────────
 
 const TOC = [
-  { label: "Introduction",     href: "#introduction" },
-  { label: "How it works",     href: "#how-it-works" },
-  { label: "Security model",   href: "#security" },
-  { label: "Prerequisites",    href: "#prerequisites" },
-  { label: "Installation",     href: "#installation" },
-  { label: "Configuration",    href: "#configuration" },
-  { label: "Dashboard",        href: "#feature-dashboard" },
+  { label: "Introduction", href: "#introduction" },
+  { label: "How it works", href: "#how-it-works" },
+  { label: "Security model", href: "#security" },
+  { label: "Prerequisites", href: "#prerequisites" },
+  { label: "Installation", href: "#installation" },
+  { label: "Configuration", href: "#configuration" },
+  { label: "Dashboard", href: "#feature-dashboard" },
   { label: "Automation scripts", href: "#feature-auto-claim" },
-  { label: "Relic market",     href: "#feature-relic-market" },
-  { label: "Deployment",       href: "#deployment" },
-  { label: "Automations",      href: "#automations" },
-  { label: "Author",           href: "#author" },
+  { label: "Relic market", href: "#feature-relic-market" },
+  { label: "Deployment", href: "#deployment" },
+  { label: "Automations", href: "#automations" },
+  { label: "Author", href: "#author" },
 ]
 
 // ─── copy button ────────────────────────────────────────────────────────────
@@ -93,7 +93,7 @@ const TOC = [
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false)
   const copy = () => {
-    navigator.clipboard.writeText(text).catch(() => {})
+    navigator.clipboard.writeText(text).catch(() => { })
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -166,11 +166,11 @@ function P({ children }: { children: React.ReactNode }) {
 // ─── feature row ────────────────────────────────────────────────────────────
 
 const SCRIPT_FEATURES = [
-  { icon: BarChart2, label: "Dashboard",       desc: "Live stats for all accounts — SCRAP balance, attacks, mine rate, RC, quests." },
-  { icon: Zap,       label: "Auto Claim",      desc: "Attack targets and auto-claim SCRAP stash across every account in one run." },
-  { icon: BookOpen,  label: "Auto Quest",      desc: "Start and collect quests automatically based on availability and cooldowns." },
-  { icon: ArrowRight,label: "Token Transfer",  desc: "Sweep HIVE, HBD, or any Hive Engine token (e.g. SCRAP) from multiple accounts to a single recipient wallet." },
-  { icon: Settings,  label: "Relic Market",    desc: "Buy and sell relics on the market — floor pricing, batch buy, fixed price modes." },
+  { icon: BarChart2, label: "Dashboard", desc: "Live stats for all accounts — SCRAP balance, attacks, mine rate, RC, quests." },
+  { icon: Zap, label: "Auto Claim", desc: "Attack targets and auto-claim SCRAP stash across every account in one run." },
+  { icon: BookOpen, label: "Auto Quest", desc: "Start and collect quests automatically based on availability and cooldowns." },
+  { icon: ArrowRight, label: "Token Transfer", desc: "Sweep HIVE, HBD, or any Hive Engine token (e.g. SCRAP) from multiple accounts to a single recipient wallet." },
+  { icon: Settings, label: "Relic Market", desc: "Buy and sell relics on the market — floor pricing, batch buy, fixed price modes." },
 ]
 
 // ─── page ──────────────────────────────────────────��─────────────────────────
@@ -207,15 +207,6 @@ export default function DocsPage() {
             </span>
           </div>
           <div className="flex items-center gap-3">
-            <a
-              href="https://github.com/rhiaji/multicore-app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-widest"
-            >
-              <GithubIcon className="size-3.5" />
-              <span className="hidden sm:inline">GitHub</span>
-            </a>
             <Link
               href="/dashboard"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary/40 bg-primary/10 text-primary text-[11px] font-semibold hover:bg-primary/20 hover:border-primary/60 transition-all uppercase tracking-widest"
