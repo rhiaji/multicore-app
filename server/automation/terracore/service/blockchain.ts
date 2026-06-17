@@ -232,13 +232,13 @@ export class BlockchainService {
         json:                   JSON.stringify({
           contractName:    "tokens",
           contractAction:  "transfer",
-          contractPayload: { symbol: "SCRAP", to, quantity: quantity.toString(), memo },
+          contractPayload: { symbol: "SCRAP", to, quantity: quantity.toFixed(8), memo },
         }),
       },
     ]
 
     const tx = await this.client.broadcast.sendOperations([op as any], key)
-    logInfo(`Transfer | ${username} → ${to} | ${quantity} SCRAP | TX: ${tx.id.slice(0, 10)}...`)
+    logInfo(`Transfer | ${username} → ${to} | ${quantity.toFixed(8)} SCRAP | TX: ${tx.id.slice(0, 10)}...`)
     return tx.id
   }
 }
