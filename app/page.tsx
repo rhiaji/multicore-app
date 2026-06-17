@@ -1,0 +1,682 @@
+"use client"
+
+import Link from "next/link"
+import { useState } from "react"
+import Image from "next/image"
+import {
+  GitFork,
+  Copy,
+  CheckCheck,
+  ArrowRight,
+  ChevronRight,
+  ExternalLink,
+  Shield,
+  Zap,
+  BookOpen,
+  Settings,
+  Lock,
+  BarChart2,
+} from "lucide-react"
+
+function GithubIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 16 16" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+    </svg>
+  )
+}
+
+// ─── sidebar nav ────────────────────────────────────────────────────────────
+
+const NAV = [
+  {
+    group: "Overview",
+    items: [
+      { label: "Introduction",  href: "#introduction" },
+      { label: "How it works",  href: "#how-it-works" },
+      { label: "Security",      href: "#security" },
+    ],
+  },
+  {
+    group: "Getting Started",
+    items: [
+      { label: "Prerequisites",    href: "#prerequisites" },
+      { label: "Installation",     href: "#installation" },
+      { label: "Configuration",    href: "#configuration" },
+    ],
+  },
+  {
+    group: "Features",
+    items: [
+      { label: "Dashboard",       href: "#feature-dashboard" },
+      { label: "Auto Claim",      href: "#feature-auto-claim" },
+      { label: "Auto Quest",      href: "#feature-auto-quest" },
+      { label: "Token Transfer",  href: "#feature-token-transfer" },
+      { label: "Relic Market",    href: "#feature-relic-market" },
+    ],
+  },
+  {
+    group: "Self-Hosting",
+    items: [
+      { label: "Environment",  href: "#env" },
+      { label: "Deployment",   href: "#deployment" },
+      { label: "Automations",  href: "#automations" },
+    ],
+  },
+  {
+    group: "Project",
+    items: [
+      { label: "Author", href: "#author" },
+    ],
+  },
+]
+
+// ─── TOC ────────────────────────────────────────────────────────────────────
+
+const TOC = [
+  { label: "Introduction",     href: "#introduction" },
+  { label: "How it works",     href: "#how-it-works" },
+  { label: "Security model",   href: "#security" },
+  { label: "Prerequisites",    href: "#prerequisites" },
+  { label: "Installation",     href: "#installation" },
+  { label: "Configuration",    href: "#configuration" },
+  { label: "Dashboard",        href: "#feature-dashboard" },
+  { label: "Automation scripts", href: "#feature-auto-claim" },
+  { label: "Relic market",     href: "#feature-relic-market" },
+  { label: "Deployment",       href: "#deployment" },
+  { label: "Automations",      href: "#automations" },
+  { label: "Author",           href: "#author" },
+]
+
+// ─── copy button ────────────────────────────────────────────────────────────
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false)
+  const copy = () => {
+    navigator.clipboard.writeText(text).catch(() => {})
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+  return (
+    <button
+      onClick={copy}
+      aria-label="Copy to clipboard"
+      className="flex-shrink-0 p-1.5 rounded hover:bg-border/50 text-muted-foreground hover:text-foreground transition-colors"
+    >
+      {copied ? <CheckCheck className="size-3.5 text-primary" /> : <Copy className="size-3.5" />}
+    </button>
+  )
+}
+
+// ─── code block ─────────────────────────────────────────────────────────────
+
+function CodeBlock({ children, lang = "bash" }: { children: string; lang?: string }) {
+  return (
+    <div className="my-4 rounded-lg border border-border bg-card overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-border">
+        <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">{lang}</span>
+        <CopyButton text={children} />
+      </div>
+      <pre className="px-4 py-3 overflow-x-auto">
+        <code className="font-mono text-xs text-foreground/90 whitespace-pre">{children}</code>
+      </pre>
+    </div>
+  )
+}
+
+// ─── callout ────────────────────────────────────────────────────────────────
+
+function Callout({ icon: Icon, children }: { icon: React.ElementType; children: React.ReactNode }) {
+  return (
+    <div className="my-4 flex gap-3 rounded-lg border border-primary/25 bg-primary/8 px-4 py-3">
+      <Icon className="size-4 text-primary flex-shrink-0 mt-0.5" />
+      <p className="text-xs text-foreground/80 leading-relaxed">{children}</p>
+    </div>
+  )
+}
+
+// ─── section heading ────────────────────────────────────────────────────────
+
+function H2({ id, children }: { id: string; children: React.ReactNode }) {
+  return (
+    <h2
+      id={id}
+      className="scroll-mt-20 mt-12 mb-4 text-xl font-bold tracking-tight text-foreground border-b border-border pb-2"
+    >
+      {children}
+    </h2>
+  )
+}
+
+function H3({ id, children }: { id?: string; children: React.ReactNode }) {
+  return (
+    <h3
+      id={id}
+      className="scroll-mt-20 mt-6 mb-2 text-sm font-bold tracking-tight text-foreground"
+    >
+      {children}
+    </h3>
+  )
+}
+
+function P({ children }: { children: React.ReactNode }) {
+  return <p className="text-sm text-muted-foreground leading-relaxed my-2">{children}</p>
+}
+
+// ─── feature row ────────────────────────────────────────────────────────────
+
+const SCRIPT_FEATURES = [
+  { icon: BarChart2, label: "Dashboard",       desc: "Live stats for all accounts — SCRAP balance, attacks, mine rate, RC, quests." },
+  { icon: Zap,       label: "Auto Claim",      desc: "Attack targets and auto-claim SCRAP stash across every account in one run." },
+  { icon: BookOpen,  label: "Auto Quest",      desc: "Start and collect quests automatically based on availability and cooldowns." },
+  { icon: ArrowRight,label: "Token Transfer",  desc: "Sweep HIVE, HBD, or any Hive Engine token (e.g. SCRAP) from multiple accounts to a single recipient wallet." },
+  { icon: Settings,  label: "Relic Market",    desc: "Buy and sell relics on the market — floor pricing, batch buy, fixed price modes." },
+]
+
+// ─── page ──────────────────────────────────────────��─────────────────────────
+
+export default function DocsPage() {
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  return (
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
+
+      {/* ── top nav ── */}
+      <header className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur-sm">
+        <div className="max-w-screen-xl mx-auto px-4 sm:px-6 h-12 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            {/* mobile sidebar toggle */}
+            <button
+              className="md:hidden p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => setSidebarOpen((v) => !v)}
+              aria-label="Toggle sidebar"
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="size-4">
+                <path d="M2 4h12M2 8h12M2 12h7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+            </button>
+            <div className="flex items-center gap-2">
+              <div className="size-6 rounded overflow-hidden">
+                <Image src="/logo.png" alt="Multicore logo" width={24} height={24} className="size-6 object-cover" />
+              </div>
+              <span className="text-sm font-bold tracking-widest uppercase text-foreground">Multicore</span>
+            </div>
+            <span className="hidden sm:flex items-center gap-1.5 text-[11px] text-muted-foreground font-mono">
+              <ChevronRight className="size-3" />
+              docs
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <a
+              href="https://github.com/rhiaji/multicore-app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-widest"
+            >
+              <GithubIcon className="size-3.5" />
+              <span className="hidden sm:inline">GitHub</span>
+            </a>
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary/40 bg-primary/10 text-primary text-[11px] font-semibold hover:bg-primary/20 hover:border-primary/60 transition-all uppercase tracking-widest"
+            >
+              Open App
+              <ArrowRight className="size-3" />
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-screen-xl mx-auto w-full flex flex-1">
+
+        {/* ── left sidebar ── */}
+        <aside
+          className={`
+            fixed inset-y-0 left-0 z-10 w-60 border-r border-border bg-background pt-12 pb-6 overflow-y-auto transition-transform duration-200
+            md:sticky md:top-12 md:h-[calc(100vh-3rem)] md:translate-x-0 md:flex md:flex-col md:shrink-0
+            ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
+          `}
+        >
+          <nav className="px-4 pt-6 flex flex-col gap-6">
+            {NAV.map((section) => (
+              <div key={section.group}>
+                <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 px-2">
+                  {section.group}
+                </p>
+                <ul className="flex flex-col gap-0.5">
+                  {section.items.map((item) => (
+                    <li key={item.href}>
+                      <a
+                        href={item.href}
+                        onClick={() => setSidebarOpen(false)}
+                        className="block px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                      >
+                        {item.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </nav>
+        </aside>
+
+        {/* mobile overlay */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 z-[9] bg-background/60 backdrop-blur-sm md:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+        {/* ── main content ── */}
+        <main className="flex-1 min-w-0 px-6 sm:px-10 py-10 max-w-3xl">
+
+          {/* page header */}
+          <div className="mb-8 pb-8 border-b border-border">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">rhiaji / multicore-app</span>
+              <a
+                href="https://github.com/rhiaji/multicore-app"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-primary transition-colors"
+              >
+                <ExternalLink className="size-3" />
+              </a>
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground mb-3 text-balance">
+              Multicore Documentation
+            </h1>
+            <p className="text-sm text-muted-foreground leading-relaxed max-w-xl text-pretty">
+              Open-source multi-account dashboard and automation toolkit for the{" "}
+              <a href="https://terracoregame.com" target="_blank" rel="noopener noreferrer"
+                className="text-foreground underline underline-offset-2 hover:text-primary transition-colors">
+                Terracore
+              </a>{" "}
+              blockchain game. Self-host, fork, or run the hosted version.
+            </p>
+            <div className="flex items-center gap-3 mt-5">
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold hover:opacity-90 transition-opacity"
+              >
+                <ArrowRight className="size-3.5" />
+                Open Dashboard
+              </Link>
+              <a
+                href="https://github.com/rhiaji/multicore-app"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-card text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <GithubIcon className="size-3.5" />
+                View Source
+              </a>
+              <a
+                href="https://github.com/rhiaji/multicore-app/fork"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-card text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <GitFork className="size-3.5" />
+                Fork
+              </a>
+            </div>
+          </div>
+
+          {/* ── Introduction ── */}
+          <H2 id="introduction">Introduction</H2>
+          <P>
+            Multicore is a browser-based, open-source dashboard for managing multiple Terracore game
+            accounts. It lets you monitor live stats, run automation scripts, and interact with the
+            relic market — all from a single interface.
+          </P>
+          <P>
+            Every automation script runs entirely in your browser. Private keys are never transmitted
+            to any server. The full source code is available on GitHub for audit at any time.
+          </P>
+
+          {/* feature grid */}
+          <div className="my-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {SCRIPT_FEATURES.map((f) => (
+              <div key={f.label} className="flex gap-3 p-4 rounded-lg border border-border bg-card">
+                <div className="size-8 rounded-md bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
+                  <f.icon className="size-3.5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-foreground mb-0.5">{f.label}</p>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">{f.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* ── How it works ── */}
+          <H2 id="how-it-works">How it works</H2>
+          <P>
+            Accounts are stored in your browser as an encrypted list. When you run a script, the
+            page decrypts the key locally, calls the Hive broadcast API directly, and streams
+            progress events back to the UI — no backend round-trip for sensitive operations.
+          </P>
+          <P>
+            The read-only dashboard and market data fetch from the Terracore and Hive public APIs on
+            every page load — no caching layer, always live.
+          </P>
+
+          {/* ── Security ── */}
+          <H2 id="security">Security</H2>
+          <Callout icon={Shield}>
+            Private keys are AES-encrypted in localStorage with a passphrase you set. They are
+            decrypted only in memory at script runtime and are never sent to any server or
+            third-party service.
+          </Callout>
+          <P>
+            The self-hosted deployment path means you can run Multicore on your own server or even{" "}
+            <code className="font-mono text-xs text-primary">localhost</code> — giving you full
+            control over the environment where your keys exist.
+          </P>
+          <P>
+            Because all automation code is open-source, you can audit exactly what happens when you
+            click &quot;Run&quot; on any script page before entering a passphrase.
+          </P>
+
+          {/* ── Prerequisites ── */}
+          <H2 id="prerequisites">Prerequisites</H2>
+          <ul className="my-3 flex flex-col gap-1.5 list-none">
+            {[
+              "Node.js 20+",
+              "pnpm (recommended) or npm",
+              "A Hive account with posting key access",
+              "Git",
+            ].map((item) => (
+              <li key={item} className="flex items-center gap-2 text-xs text-muted-foreground">
+                <ChevronRight className="size-3 text-primary flex-shrink-0" />
+                {item}
+              </li>
+            ))}
+          </ul>
+
+          {/* ── Installation ── */}
+          <H2 id="installation">Installation</H2>
+          <H3>Clone the repository</H3>
+          <CodeBlock>{`git clone https://github.com/rhiaji/multicore-app.git
+cd multicore-app`}</CodeBlock>
+
+          <H3>Install dependencies</H3>
+          <CodeBlock>{`pnpm install`}</CodeBlock>
+
+          <H3>Run the development server</H3>
+          <CodeBlock>{`pnpm dev`}</CodeBlock>
+          <P>
+            Open{" "}
+            <code className="font-mono text-xs text-primary">http://localhost:3000</code> in your
+            browser. The dashboard is available at{" "}
+            <code className="font-mono text-xs text-primary">/dashboard</code>.
+          </P>
+
+          {/* ── Configuration ── */}
+          <H2 id="configuration">Configuration</H2>
+          <H3>Adding accounts</H3>
+          <P>
+            From the dashboard, click <strong className="text-foreground font-semibold">Add Account</strong>. Enter
+            your Hive username and posting key. The key is encrypted with your chosen passphrase and
+            stored in localStorage — it is never sent anywhere.
+          </P>
+          <H3>Encryption passphrase</H3>
+          <P>
+            You set a passphrase the first time you add an account. Every time you run a script you
+            will be prompted to enter it to decrypt the key in memory for that session only.
+          </P>
+          <Callout icon={Lock}>
+            Use a strong, unique passphrase. If you forget it, you will need to re-add your accounts
+            — there is no recovery mechanism by design.
+          </Callout>
+
+          {/* ── Features ── */}
+          <H2 id="feature-dashboard">Dashboard</H2>
+          <P>
+            The <Link href="/dashboard" className="text-primary hover:underline underline-offset-2">dashboard</Link>{" "}
+            shows a live table of all tracked accounts with SCRAP balance, mine rate, attack counts,
+            RC percentage, and quest status. Data is fetched from the Terracore and Hive APIs on
+            every load.
+          </P>
+
+          <H2 id="feature-auto-claim">Auto Claim &amp; Battle</H2>
+          <P>
+            Iterates over all accounts, attacks available targets up to the configured maximum, then
+            claims the SCRAP stash. Progress is streamed live to the log panel. Accounts that have
+            no attacks remaining or have already claimed are skipped automatically.
+          </P>
+          <CodeBlock lang="route">{`/scripts/auto-claim-battle`}</CodeBlock>
+
+          <H2 id="feature-auto-quest">Auto Quest</H2>
+          <P>
+            Collects completed quests and starts new ones across all accounts in a single run.
+            Handles cooldown detection and skips accounts that have no available quest slots.
+          </P>
+          <CodeBlock lang="route">{`/scripts/auto-quest`}</CodeBlock>
+
+          <H2 id="feature-token-transfer">Token Transfer</H2>
+          <P>
+            Transfers tokens from multiple source accounts to a single recipient. Supports native Hive
+            tokens (<code className="font-mono text-xs text-primary">HIVE</code>,{" "}
+            <code className="font-mono text-xs text-primary">HBD</code>) as well as any Hive Engine
+            token such as <code className="font-mono text-xs text-primary">SCRAP</code> — set the
+            symbol in the UI and the script routes the transfer accordingly. Supports
+            &quot;max balance&quot; mode or a fixed custom amount per account.
+          </P>
+          <CodeBlock lang="route">{`/scripts/token-transfer`}</CodeBlock>
+
+          <H2 id="feature-relic-market">Relic Market</H2>
+          <P>
+            Two separate scripts handle buying and selling relics on the Terracore market. The sell
+            script supports auto-floor pricing (undercut lowest listing) or fixed price per rarity.
+            The buy script batches purchases from multiple seller accounts into a single transaction
+            sequence.
+          </P>
+          <CodeBlock lang="route">{`/scripts/relic-market-sell
+/scripts/relic-market-buy`}</CodeBlock>
+
+          {/* ── Self-Hosting ── */}
+          <H2 id="env">Environment</H2>
+          <P>
+            No required environment variables for basic operation — the app works out of the box.
+            If you need to configure optional integrations, create a{" "}
+            <code className="font-mono text-xs text-primary">.env.local</code> file in the project root.
+          </P>
+
+          <H2 id="deployment">Deployment</H2>
+          <H3>Any Node.js host</H3>
+          <P>
+            Fork the repository on GitHub, clone it to your host, install dependencies, and run the
+            build. No platform-specific configuration is required — any host that supports Node.js 20+
+            and Next.js works.
+          </P>
+          <CodeBlock>{`pnpm build
+pnpm start`}</CodeBlock>
+
+          <H3>Docker / self-hosted</H3>
+          <P>
+            Build the Next.js output and serve it with{" "}
+            <code className="font-mono text-xs text-primary">pnpm start</code>, or wrap it in a
+            Dockerfile. The app has no server-side secrets so the image needs no special environment.
+          </P>
+
+          {/* ── Automations ── */}
+          <H2 id="automations">Automations</H2>
+          <P>
+            All automation scripts run via <code className="font-mono text-xs text-primary">tsx</code> directly
+            on your machine or server — no browser required. Each script reads account credentials from
+            your local configuration and executes the corresponding on-chain actions.
+          </P>
+          <Callout icon={Shield}>
+            Make sure your <code className="font-mono text-xs text-primary">.env</code> file is configured
+            with the correct encrypted keys before running any automation script.
+          </Callout>
+
+          <H3>Auto Claim &amp; Battle</H3>
+          <P>
+            Attacks targets and claims stash rewards for every configured account in one run.
+          </P>
+          <CodeBlock>{`pnpm auto:claim-battle`}</CodeBlock>
+
+          <H3>Auto Quest</H3>
+          <P>
+            Collects completed quests and starts new available quests across all accounts.
+          </P>
+          <CodeBlock>{`pnpm auto:quest`}</CodeBlock>
+
+          <H3>Relic Market</H3>
+          <P>
+            Runs the combined relic market automation — handles both listing and purchasing
+            relics based on your configured pricing rules.
+          </P>
+          <CodeBlock>{`pnpm auto:relic-market`}</CodeBlock>
+
+          <H3>Token Transfer</H3>
+          <P>
+            Transfers tokens from all source accounts to your configured recipient. Supports native
+            Hive tokens (<code className="font-mono text-xs text-primary">HIVE</code>,{" "}
+            <code className="font-mono text-xs text-primary">HBD</code>) and any Hive Engine token
+            (e.g. <code className="font-mono text-xs text-primary">SCRAP</code>) — just set the
+            symbol in your configuration and the script routes the transfer accordingly.
+          </P>
+          <CodeBlock>{`pnpm auto:token-transfer`}</CodeBlock>
+
+          <H3>Terracore (combined)</H3>
+          <P>
+            Runs all Terracore automations in a single continuous process — attacks targets,
+            claims SCRAP stash, collects and starts quests, and automatically transfers SCRAP
+            tokens to your configured main account. This is the recommended command for fully
+            hands-off operation.
+          </P>
+          <CodeBlock>{`pnpm auto:terracore`}</CodeBlock>
+
+          <H3>Running all scripts</H3>
+          <P>
+            You can chain any of the above together in your shell or set up a cron job to run
+            them on a schedule. Example cron that runs claim + quest every hour:
+          </P>
+          <CodeBlock lang="cron">{`0 * * * * cd /path/to/multicore-app && pnpm auto:claim-battle && pnpm auto:quest`}</CodeBlock>
+
+          {/* ── Author ── */}
+          <H2 id="author">Author</H2>
+          <P>
+            Multicore was built and is maintained by{" "}
+            <a
+              href="https://peakd.com/@rhiaji"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline underline-offset-2 font-semibold"
+            >
+              @rhiaji
+            </a>
+            . You can follow updates, posts, and future projects on their PeakD profile.
+          </P>
+          <div className="my-4 flex items-center gap-4 rounded-lg border border-border bg-card p-4">
+            <div className="flex flex-col gap-1.5">
+              <span className="text-sm font-bold text-foreground">rhiaji</span>
+              <a
+                href="https://peakd.com/@rhiaji"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline underline-offset-2"
+              >
+                <ExternalLink className="size-3" />
+                peakd.com/@rhiaji
+              </a>
+            </div>
+          </div>
+
+          {/* bottom nav */}
+          <div className="mt-16 pt-6 border-t border-border flex items-center justify-between gap-4">
+            <div />
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-2 text-xs font-semibold text-primary hover:underline underline-offset-2"
+            >
+              Open the Dashboard
+              <ArrowRight className="size-3.5" />
+            </Link>
+          </div>
+        </main>
+
+        {/* ── right TOC ── */}
+        <aside className="hidden xl:block w-52 shrink-0 sticky top-12 h-[calc(100vh-3rem)] overflow-y-auto py-10 px-6">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-3">
+            On this page
+          </p>
+          <ul className="flex flex-col gap-1">
+            {TOC.map((item) => (
+              <li key={item.href}>
+                <a
+                  href={item.href}
+                  className="block text-[11px] text-muted-foreground hover:text-foreground transition-colors py-0.5 leading-relaxed"
+                >
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-8 pt-6 border-t border-border flex flex-col gap-2">
+            <a
+              href="https://github.com/rhiaji/multicore-app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <GithubIcon className="size-3" />
+              View on GitHub
+            </a>
+            <a
+              href="https://github.com/rhiaji/multicore-app/fork"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <GitFork className="size-3" />
+              Fork repository
+            </a>
+            <a
+              href="https://peakd.com/@rhiaji"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ExternalLink className="size-3" />
+              @rhiaji on PeakD
+            </a>
+          </div>
+        </aside>
+
+      </div>
+
+      {/* footer */}
+      <footer className="border-t border-border bg-card/30">
+        <div className="max-w-screen-xl mx-auto px-6 h-12 flex items-center justify-between gap-4">
+          <span className="text-[11px] text-muted-foreground font-mono">
+            multicore — MIT License — made by{" "}
+            <a
+              href="https://peakd.com/@rhiaji"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline underline-offset-2"
+            >
+              @rhiaji
+            </a>
+          </span>
+          <a
+            href="https://github.com/rhiaji/multicore-app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <GithubIcon className="size-3.5" />
+            rhiaji/multicore-app
+          </a>
+        </div>
+      </footer>
+    </div>
+  )
+}
