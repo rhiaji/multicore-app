@@ -59,20 +59,20 @@ const NAV = [
       { label: "Relic Market", href: "#feature-relic-market" },
     ],
   },
-    {
-      group: "Self-Hosting",
-      items: [
-        { label: "Environment", href: "#env" },
-        { label: "Deployment", href: "#deployment" },
-        { label: "Automations", href: "#automations" },
-        { label: "Required env vars", href: "#automations-env" },
-        { label: "Claim & Battle", href: "#automations-claim" },
-        { label: "Auto Quest", href: "#automations-quest" },
-        { label: "Token Transfer", href: "#automations-transfer" },
-        { label: "Relic Market", href: "#automations-relic" },
-        { label: "Terracore (combined)", href: "#automations-terracore" },
-      ],
-    },
+  {
+    group: "Self-Hosting",
+    items: [
+      { label: "Environment", href: "#env" },
+      { label: "Deployment", href: "#deployment" },
+      { label: "Automations", href: "#automations" },
+      { label: "Required env vars", href: "#automations-env" },
+      { label: "Claim & Battle", href: "#automations-claim" },
+      { label: "Auto Quest", href: "#automations-quest" },
+      { label: "Token Transfer", href: "#automations-transfer" },
+      { label: "Relic Market", href: "#automations-relic" },
+      { label: "Terracore (combined)", href: "#automations-terracore" },
+    ],
+  },
   {
     group: "Project",
     items: [
@@ -304,7 +304,7 @@ export default function DocsPage() {
             href="/dashboard"
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-primary/40 bg-primary/8 text-primary text-xs font-semibold hover:bg-primary/15 hover:border-primary/60 transition-all uppercase tracking-wider"
           >
-            Open App
+            App
             <ArrowRight className="size-3" />
           </Link>
         </div>
@@ -886,61 +886,7 @@ retry: { maxAttempts: 3 },`}</CodeBlock>
           </div>
         </main>
 
-        {/* ── right TOC ── */}
-        <aside className="hidden xl:flex w-56 shrink-0 flex-col sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto py-10 px-5 border-l border-border">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 mb-4">
-            On this page
-          </p>
-          <ul className="flex flex-col gap-1 flex-1">
-            {TOC.map((item) => {
-              const isActive = activeHash === item.href
-              return (
-                <li key={item.href}>
-                  <a
-                    href={item.href}
-                    className={`block text-xs py-1 leading-relaxed transition-colors ${
-                      isActive
-                        ? "text-primary font-medium"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {item.label}
-                  </a>
-                </li>
-              )
-            })}
-          </ul>
 
-          <div className="pt-6 mt-6 border-t border-border flex flex-col gap-2.5">
-            <a
-              href="https://github.com/rhiaji/multicore-app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <GithubIcon className="size-3" />
-              View on GitHub
-            </a>
-            <a
-              href="https://github.com/rhiaji/multicore-app/fork"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <GitFork className="size-3" />
-              Fork repository
-            </a>
-            <a
-              href="https://peakd.com/@rhiaji"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ExternalLink className="size-3" />
-              @rhiaji on PeakD
-            </a>
-          </div>
-        </aside>
 
       </div>
 

@@ -1,0 +1,442 @@
+# Multicore — Full LLM Reference
+
+## Project Overview
+
+Multicore is an open-source Next.js 16 dashboard and headless automation toolkit for playing
+Terracore, a blockchain game on the Hive network. The app lets you track multiple Hive accounts,
+perform all Terracore on-chain actions via Hive Keychain, and run fully automated background
+scripts for claiming SCRAP, battling, questing, selling/buying relics, and token sweeping.
+
+GitHub: https://github.com/rhiaji/multicore-app
+Author: rhiaji (PeakD: https://peakd.com/@rhiaji)
+
+---
+
+## Tech Stack
+
+| Layer          | Technology                                             |
+|----------------|--------------------------------------------------------|
+| Framework      | Next.js 16 (App Router), React 19, TypeScript          |
+| Styling        | Tailwind CSS v4, shadcn/ui, tw-animate-css             |
+| Blockchain UI  | Hive Keychain browser extension                        |
+| Blockchain SDK | @hiveio/dhive (server-side broadcasting)               |
+| Encryption     | CryptoJS AES-256 (account keys at rest)                |
+| Scripts runner | tsx (TypeScript execute, no compile step)              |
+| Analytics      | @vercel/analytics                                      |
+| HTTP           | axios                                                  |
+
+---
+
+## Full File Tree
+
+```
+/
+├── app/
+│   ├── layout.tsx                              # Root layout, fonts, metadata
+│   ├── globals.css                             # Tailwind + design tokens
+│   ├── page.tsx                                # Docs / self-hosting guide (/)
+│   ├── dashboard/page.tsx                      # Multi-account dashboard (/dashboard)
+│   ├── market/relics/page.tsx                  # Relic marketplace (/market/relics)
+│   └── scripts/
+│       ├── page.tsx                            # Scripts index & launcher
+│       ├── auto-claim-battle/page.tsx          # Claim & battle SSE log UI
+│       ├── auto-quest/page.tsx                 # Quest automation SSE log UI
+│       ├── relic-market-sell/page.tsx          # Relic sell SSE log UI
+│       ├── relic-market-buy/page.tsx           # Relic buy SSE log UI
+│       └── token-transfer/page.tsx             # Token transfer SSE log UI
+│
+├── app/api/scripts/
+│   ├── auto-claim-battle/route.ts              # POST → SSE stream (claim & battle)
+│   ├── auto-quest/route.ts                     # POST → SSE stream (quest)
+│   ├── relic-market-sell/route.ts              # POST → SSE stream (sell)
+│   ├── relic-market-buy/route.ts               # POST → SSE stream (buy)
+│   └── token-transfer/route.ts                 # POST → SSE stream (transfer)
+│
+├── components/
+│   ├── dashboard.tsx                           # Root multi-account dashboard
+│   ├── account-card.tsx                        # Per-account stats, actions, relics
+│   ├── active-quest-card.tsx                   # In-progress quest progress card
+│   ├── quest-card.tsx                          # Quest board slot
+│   ├── quest-detail-modal.tsx                  # Quest requirements + start/collect
+│   ├── quest-history-modal.tsx                 # Per-account quest history log
+│   ├── battle-modal.tsx                        # Manual battle target selection
+│   ├── upgrade-stat-modal.tsx                  # Upgrade DMG / DEF / ENG
+│   ├── stake-scrap-modal.tsx                   # Stake SCRAP via Hive Engine
+│   ├── contribute-favor-modal.tsx              # Burn SCRAP for Favor
+│   ├── send-hive-modal.tsx                     # HIVE transfer via Keychain
+│   ├── sell-relic-modal.tsx                    # List single relic type
+│   ├── sell-all-relics-modal.tsx               # Batch list all relic types
+│   ├── delegate-rc-modal.tsx                   # RC delegation via Keychain
+│   ├── rc-overview-panel.tsx                   # Batch RC fetch for all accounts
+│   ├── add-account.tsx                         # Add a tracked account
+│   ├── configure-accounts-modal.tsx            # Encrypt accounts for scripts
+│   └── market/
+│       ├── relics-market.tsx                   # Marketplace browser
+│       ├── buy-relic-modal.tsx                 # Buy single listing
+│       ├── mass-buy-relics-modal.tsx           # Sweep tracked-account listings
+│       ├── relics-market-logs.tsx              # Market activity log
+│       ├── user-market-logs.tsx                # Per-user market log
+│       ├── hive-login-button.tsx               # Keychain login button
+│       └── hive-login-nav.tsx                  # Nav-bar login widget
+│
+├── lib/
+│   ├── types.ts                                # Canonical domain types
+│   ├── hive-auth.ts                            # Keychain login / session
+│   ├── encryption.ts                           # AES-256 encrypt/decrypt
+│   ├── quest-utils.ts                          # Quest tier/stat requirements
+│   ├── utils.ts                                # Tailwind cn() helper
+│   ├── events/                                 # Browser Keychain wrappers
+│   │   ├── battle/action.ts                    # terracore_battle
+│   │   ├── buy-relic/action.ts                 # Transfer to terracore.market
+│   │   ├── claim-scrap/action.ts               # terracore_claim
+│   │   ├── contribute-favor/action.ts          # Burn SCRAP for Favor
+│   │   ├── delegate-rc/action.ts               # RC delegation
+│   │   ├── delegation-stats/action.ts          # Fetch VESTS in/out
+│   │   ├── mass-buy-relics/action.ts           # Batch purchase broadcast
+│   │   ├── quest-collect/action.ts             # terracore_quest_collect
+│   │   ├── quest-start/action.ts               # SCRAP burn to start quest
+│   │   ├── sell-all-relics/action.ts           # Batch tm_create
+│   │   ├── sell-relic/action.ts                # Single tm_create
+│   │   ├── stake-scrap/action.ts               # SCRAP stake (HE)
+│   │   ├── transfer-hive/action.ts             # requestTransfer HIVE
+│   │   └── upgrade-stat/action.ts              # Burn SCRAP to upgrade stat
+│   ├── server-events/                          # Server-side SSE generators
+│   │   ├── auto-claim-battle/action.ts         # runAutoClaimBattle()
+│   │   ├── auto-quest/action.ts                # runAutoQuest()
+│   │   ├── relic-market-buy/action.ts          # runRelicMarketBuy()
+│   │   ├── relic-market-sell/action.ts         # runRelicMarketSell()
+│   │   └── transfer/action.ts                  # runTransfer()
+│   └── shared/
+│       ├── hive-nodes.ts                       # Hive RPC node list
+│       ├── hive-client.ts                      # dhive client factory
+│       ├── api/terracore.ts                    # Terracore REST API fetchers
+│       └── events/types.ts                     # Typed SSE event unions
+│
+└── server/
+    ├── automation/
+    │   ├── auto-claim-battle/
+    │   │   ├── index.ts                        # Entry point (loop)
+    │   │   └── config/settings.ts              # Bot behaviour settings
+    │   ├── auto-quest/
+    │   │   ├── index.ts
+    │   │   └── config/settings.ts
+    │   ├── auto-token-transfer/
+    │   │   ├── index.ts
+    │   │   ├── config/settings.ts
+    │   │   └── config/env.ts                   # Runtime env var overrides
+    │   ├── auto-relic-market/
+    │   │   ├── index.ts
+    │   │   ├── config/settings.ts
+    │   │   └── config/env.ts
+    │   └── terracore/
+    │       ├── index.ts                        # Combined loop (recommended)
+    │       ├── config/settings.ts
+    │       └── config/env.ts
+    └── scripts/                                # One-off helper scripts (not loops)
+```
+
+---
+
+## Environment Variables
+
+Copy `.env.example` to `.env` and fill in before running any automation.
+
+```env
+# Required for all automations
+TERRACORE_ACCOUNTS_ENC       # AES-encrypted account list (from dashboard Encrypt tool)
+TERRACORE_ENCRYPTION_KEY     # 64-char hex key matching the encrypted config
+TERRACORE_ACCOUNT_MAIN       # Main / receiver account username (no @ sign)
+POLL_INTERVAL                # Loop interval ms (default: 60000)
+
+# Runtime overrides for auto-token-transfer only
+TOKEN_SYMBOL                 # Override settings.tokenSymbol
+SEND_MAX_BALANCE             # true|false — override settings.sendMaxBalance
+CUSTOM_AMOUNT                # Override settings.customAmount
+RUN_ONCE                     # true — run one pass and exit (useful for cron)
+```
+
+---
+
+## Automation Scripts Reference
+
+### pnpm auto:claim-battle
+File: server/automation/auto-claim-battle/
+
+Attacks available targets then claims the SCRAP mining stash for every account.
+Loops continuously. Skips claim if scrap balance is below threshold (configurable).
+
+Settings (server/automation/auto-claim-battle/config/settings.ts):
+
+```ts
+scrapRequirement: {
+  enabled:    true,   // Skip claim if SCRAP < minerate × multiplier
+  multiplier: 4,      // How many cycles of mining to accumulate first
+}
+manualClaim: {
+  enabled: false,     // true = always claim regardless of balance
+}
+attacks: {
+  enabled:         true,
+  minimumRequired: 2,     // Need at least this many available attacks to proceed
+}
+transfer: {
+  enabled:        false,  // Sweep SCRAP to TERRACORE_ACCOUNT_MAIN after claim
+  scrapAllowance: 200,    // SCRAP to leave in each sub-account
+  memo:           "terracore auto-transfer",
+}
+delays: {
+  betweenAttacks:   1500,   // ms between each attack broadcast
+  betweenAccounts:  2000,   // ms between accounts
+  betweenLoops:     5000,   // ms between full loop cycles
+  retryDelay:       1500,   // ms before retry (× attempt number)
+  claimPropagation: 3000,   // ms after claim before reading HE balance
+}
+```
+
+NOTE: Boss fights are NOT automated. Only standard player-vs-player battles.
+
+---
+
+### pnpm auto:quest
+File: server/automation/auto-quest/
+
+Collects completed quests and starts new available quests for every account.
+Quest collect uses posting key. Quest start uses active key (SCRAP burn).
+
+Settings (server/automation/auto-quest/config/settings.ts):
+
+```ts
+quests: {
+  maxStartsPerCycle: 3,  // Board slots to start per account per cycle (1–3)
+}
+delays: {
+  betweenActions:  1500,
+  betweenAccounts: 2000,
+  betweenLoops:    5000,
+  retryDelay:      1500,
+}
+retry: {
+  maxAttempts: 3,
+}
+```
+
+---
+
+### pnpm auto:token-transfer
+File: server/automation/auto-token-transfer/
+
+Sweeps a token balance from every sub-account to TERRACORE_ACCOUNT_MAIN.
+Supports HIVE, HBD (native), and any Hive Engine token (e.g. SCRAP).
+
+Settings (server/automation/auto-token-transfer/config/settings.ts):
+
+```ts
+tokenSymbol:    "HIVE",  // Token to sweep — HIVE/HBD or HE symbol like SCRAP
+sendMaxBalance: true,    // true = full balance minus allowance
+customAmount:   0,       // Fixed amount when sendMaxBalance is false
+allowance:      0,       // Leave this much behind when sweeping
+memo:           "Multicore bot token transfer consolidation",
+delays: {
+  betweenTransfers: 1500,
+  betweenAccounts:  2000,
+  betweenLoops:     60000,
+  retryDelay:       1500,
+}
+retry: { maxAttempts: 3 }
+runOnce: false,          // true = exit after one pass (cron-friendly)
+```
+
+Runtime env overrides: TOKEN_SYMBOL, SEND_MAX_BALANCE, CUSTOM_AMOUNT, RUN_ONCE
+
+---
+
+### pnpm auto:relic-market
+File: server/automation/auto-relic-market/
+
+Sub-accounts list their relics on the Terracore marketplace.
+Then TERRACORE_ACCOUNT_MAIN buys them back.
+Sell uses active key (tm_create). Buy uses active key (transfer to terracore.market).
+
+Settings (server/automation/auto-relic-market/config/settings.ts):
+
+```ts
+sell: {
+  pricingMode: "auto",  // "auto" = undercut floor | "fixed" = flat per-rarity
+  autoFloor:   0.1,     // Minimum listing total in HIVE (marketplace minimum)
+  fixedPrices: {        // Used only when pricingMode is "fixed"
+    common_relics:    0.001,
+    uncommon_relics:  0.001,
+    rare_relics:      0.001,
+    epic_relics:      0.001,
+    legendary_relics: 0.001,
+  },
+}
+buy: {
+  batchTrigger:    25,    // Cached listings that trigger early buy phase
+  triggerDelay:    5000,  // ms to wait before fetching live market after trigger
+  batchSize:       25,    // Max ops per Hive broadcast tx (keep ≤ 25)
+  rarityFilter:    null,  // e.g. ["rare_relics","epic_relics"] or null for all
+  maxPricePerUnit: null,  // Skip listings above this HIVE/unit; null = no limit
+}
+delays: {
+  betweenAccounts: 1500,
+  betweenBatches:  1500,
+  betweenLoops:    5000,
+  retryDelay:      1500,
+}
+retry: { maxAttempts: 4 }
+```
+
+---
+
+### pnpm auto:terracore  (recommended)
+File: server/automation/terracore/
+
+Combined loop: claim + battle + quest + SCRAP transfer in one continuous process.
+This is the recommended single command for fully hands-off Terracore operation.
+Boss fights and stat upgrades are NOT part of this loop.
+
+Settings (server/automation/terracore/config/settings.ts):
+
+```ts
+scrapRequirement: { enabled: true, multiplier: 4 }
+manualClaim:      { enabled: false }
+attacks:          { enabled: true, minimumRequired: 2 }
+quests:           { maxStartsPerCycle: 3 }
+transfer: {
+  enabled:        true,   // Sweep SCRAP after each claim (on by default here)
+  scrapAllowance: 200,
+  memo:           "Multicore Bot consolidation",
+}
+delays: {
+  betweenAttacks:   1500,
+  betweenActions:   1500,  // Between quest collect/start broadcasts
+  betweenAccounts:  2000,
+  betweenLoops:     5000,
+  retryDelay:       1500,
+  claimPropagation: 3000,
+}
+retry: { maxAttempts: 3 }
+```
+
+---
+
+## Account Encryption Flow
+
+Private keys are never stored in plaintext. They are encrypted client-side in the
+browser before being placed in environment variables.
+
+1. Dashboard → Switch → Export Config  →  JSON template with empty key fields
+2. Paste template into editor, fill active_key and posting_key from Hive wallet
+3. Dashboard → Scripts → Encrypt Accounts  →  produces ENCRYPTION_KEY + encrypted blob
+4. Set TERRACORE_ENCRYPTION_KEY and TERRACORE_ACCOUNTS_ENC in .env
+5. Run any automation script — keys are decrypted in-memory only during execution
+
+Implementation: lib/encryption.ts (CryptoJS AES-256)
+- generateEncryptionKey()            → 32-byte random hex key
+- encryptAccounts(accounts, key)     → EncryptedConfig
+- decryptAccounts(config, key)       → AccountWithKeys[]
+
+---
+
+## Hive Blockchain Action Reference
+
+### Keychain calls (browser UI)
+
+| Action               | Keychain method        | custom_json id / target  | Key required |
+|----------------------|------------------------|--------------------------|--------------|
+| Claim SCRAP          | requestCustomJson      | terracore_claim          | Posting      |
+| Battle               | requestCustomJson      | terracore_battle         | Posting      |
+| Quest collect        | requestCustomJson      | terracore_quest_collect  | Posting      |
+| Delegate RC          | requestCustomJson      | rc                       | Posting      |
+| Upgrade stat         | requestCustomJson      | ssc-mainnet-hive         | Active       |
+| Stake SCRAP          | requestCustomJson      | ssc-mainnet-hive         | Active       |
+| Burn SCRAP (Favor)   | requestCustomJson      | ssc-mainnet-hive         | Active       |
+| Start quest          | requestCustomJson      | ssc-mainnet-hive         | Active       |
+| Sell relic (single)  | requestCustomJson      | ssc-mainnet-hive tm_create | Active     |
+| Sell all relics      | requestBroadcast       | ssc-mainnet-hive tm_create | Active     |
+| Buy relic            | requestTransfer        | terracore.market         | Active       |
+| Mass-buy relics      | requestBroadcast       | transfers to terracore.market | Active  |
+| Send HIVE            | requestTransfer        | recipient                | Active       |
+
+### Stat upgrade memo format
+
+```
+terracore_damage-<random_hash>
+terracore_defense-<random_hash>
+terracore_engineering-<random_hash>
+```
+
+### Stat upgrade cost formula
+
+```
+cost (SCRAP) = currentLevel²
+currentLevel (damage)      = floor(player.damage / 10)
+currentLevel (defense)     = floor(player.defense / 10)
+currentLevel (engineering) = player.engineering
+```
+
+---
+
+## Terracore REST API
+
+All game data comes from the Terracore REST API. Fetchers: lib/shared/api/terracore.ts
+
+| Function                      | Endpoint                          | Returns          |
+|-------------------------------|-----------------------------------|------------------|
+| fetchPlayer(username)         | /player/:username                 | PlayerData       |
+| fetchPlayerRelics(username)   | /items/:username                  | UserRelic[]      |
+| fetchQuestBoard(username)     | /quest_board?username=            | QuestBoard       |
+| fetchActiveQuests(username)   | /quests/:username                 | ActiveQuest[]    |
+| fetchBattleTargets(maxDef)    | /battle?maxDefense=               | BattleTarget[]   |
+
+fetchPlayer retries up to 5× on HTTP 429 (rate limit).
+
+---
+
+## Quest System
+
+Five quest types, each with tiers 1–5.
+
+| Type    | Primary stat   | Secondary | Required item |
+|---------|----------------|-----------|---------------|
+| COMBAT  | DMG            | CRIT      | Weapon        |
+| SALVAGE | ENG            | —         | Tool          |
+| STEALTH | DODGE (items)  | LUCK      | Armor         |
+| FORTUNE | LUCK (items)   | CRIT      | Avatar        |
+| DEFENSE | DEF            | —         | Ship          |
+
+| Tier | Min level | Min stat | Item required |
+|------|-----------|----------|---------------|
+| 1    | 1         | 10       | No            |
+| 2    | 10        | 50       | No            |
+| 3    | 25        | 100      | Yes           |
+| 4    | 50        | 200      | Yes           |
+| 5    | 100       | 500      | Yes           |
+
+---
+
+## What is NOT Automated
+
+The following Terracore actions exist in the dashboard UI but are NOT part of any
+automation script or loop:
+
+- Boss fights
+- Stat upgrades (DMG / DEF / ENG)
+- SCRAP staking
+- Burning SCRAP for Favor
+- RC delegation
+- Sending HIVE
+- Manually buying relics from the marketplace
+
+---
+
+## Common Errors
+
+| Error                                  | Cause / Fix                                                                 |
+|----------------------------------------|-----------------------------------------------------------------------------|
+| Failed to decrypt TERRACORE_ACCOUNTS_ENC | Key mismatch or whitespace. Re-copy both values from the Encrypt tool.    |
+| Keychain not found                     | Install + unlock Hive Keychain browser extension.                           |
+| RC errors on broadcast                 | Account low on Resource Credits. Use RC delegation or wait for recharge.    |
+| Script shows stale / wrong accounts    | Re-encrypt with the current account list and update .env.                   |
+| Stat upgrade wrong action              | Check lib/events/upgrade-stat/action.ts memo prefix matches the stat.       |
