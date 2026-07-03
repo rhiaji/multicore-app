@@ -98,7 +98,7 @@ const settings: BotSettings = {
     betweenAttacks: 1_500,
     betweenActions: 1_500,
     betweenAccounts: 2_000,
-    betweenLoops: 5_000,nly 
+    betweenLoops: 5_000,
     retryDelay: 1_500,
     claimPropagation: 3_000,
   },
