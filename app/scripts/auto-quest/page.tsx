@@ -229,6 +229,10 @@ export default function AutoQuestPage() {
             )
             break
 
+          case "rc-warning":
+            pushLog("error", `[RC] @${(evt as any).username}: ${(evt as any).message}`)
+            break
+
           case "account-error":
             pushLog("error", `@${evt.username}: ${evt.message}`)
             break

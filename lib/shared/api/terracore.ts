@@ -89,6 +89,37 @@ export async function fetchBattleTargets(maxDefense: number): Promise<BattleTarg
   return Array.isArray(json) ? json : (json.players ?? [])
 }
 
+/**
+ * Fetch the Hive Engine SCRAP balance for a given account.
+ * Uses the Hive Engine sidechain API directly.
+ * Returns 0 if the account has no SCRAP token balance.
+ */
+export async function fetchHiveEngineScrapBalance(username: string): Promise<number> {
+  const res = await fetch(
+    `https://api.hive-engine.com/rpc/contracts`,
+    {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id:      1,
+        method:  "find",
+        params:  {
+          contract: "tokens",
+          table:    "balances",
+          query:    { account: username, symbol: "SCRAP" },
+          limit:    1,
+          offset:   0,
+        },
+      }),
+    },
+  )
+  if (!res.ok) throw new Error(`HTTP ${res.status} fetching HE SCRAP balance for "@${username}"`)
+  const json   = await res.json()
+  const result = json?.result?.[0]
+  return result ? parseFloat(result.balance ?? "0") : 0
+}
+
 // ── Internal helpers ──────────────────────────────────────────────────────────
 
 function sleep(ms: number): Promise<void> {

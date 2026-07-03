@@ -266,6 +266,10 @@ export default function AutoClaimBattlePage() {
           else if (evt.action === "claim-error")   addLog("error", `@${evt.username} — claim error: ${evt.message}`)
         }
 
+        else if (type === "rc-warning") {
+          addLog("error", `[RC] @${(evt as any).username}: ${(evt as any).message}`)
+        }
+
         else if (type === "error") {
           addLog("error", `Error: ${evt.message}`)
         }

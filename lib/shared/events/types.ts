@@ -26,6 +26,18 @@ export type ErrorEvent = {
   message: string
 }
 
+/**
+ * Emitted when an operation is skipped because the account lacks sufficient
+ * HE SCRAP balance. Includes the account, what was skipped, and the balance.
+ */
+export type RcWarningEvent = {
+  type:      "rc-warning"
+  username:  string
+  message:   string
+  balance?:  number
+  required?: number
+}
+
 // ── RelicMarketSell ───────────────────────────────────────────────────────────
 
 export type RelicMarketSellAccountEvent = {
@@ -173,6 +185,7 @@ export type AutoQuestDoneEvent = {
 export type AutoQuestEvent =
   | StepEvent
   | ErrorEvent
+  | RcWarningEvent
   | AutoQuestAccountEvent
   | AutoQuestAccountErrorEvent
   | AutoQuestActionEvent
@@ -231,6 +244,7 @@ export type AutoClaimBattleDoneEvent = {
 export type AutoClaimBattleEvent =
   | StepEvent
   | ErrorEvent
+  | RcWarningEvent
   | AutoClaimBattlePlayerEvent
   | AutoClaimBattlePlayerErrorEvent
   | AutoClaimBattleAccountActionEvent
