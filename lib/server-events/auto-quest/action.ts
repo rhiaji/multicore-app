@@ -6,12 +6,12 @@
  * The calling page iterates with: for await (const evt of runAutoQuest(params)) { ... }
  */
 
-import { Client, PrivateKey }                              from "@hiveio/dhive"
-import { makeClientRelaxed }                              from "@/lib/shared/hive-client"
-import { fetchPlayer, fetchQuestBoard, fetchActiveQuests } from "@/lib/shared/api/terracore"
-import type { PlayerData, QuestBoard, ActiveQuest, QuestBoardSlot } from "@/lib/shared/api/terracore"
-import { checkQuestRequirements }                         from "@/lib/quest-utils"
-import type { AutoQuestEvent }                            from "@/lib/shared/events/types"
+import { Client, PrivateKey }                                                       from "@hiveio/dhive"
+import { makeClientRelaxed }                                                       from "@/lib/shared/hive-client"
+import { fetchPlayer, fetchQuestBoard, fetchActiveQuests, fetchHiveEngineScrapBalance } from "@/lib/shared/api/terracore"
+import type { PlayerData, QuestBoard, ActiveQuest, QuestBoardSlot }                from "@/lib/shared/api/terracore"
+import { checkQuestRequirements }                                                   from "@/lib/quest-utils"
+import type { AutoQuestEvent }                                                      from "@/lib/shared/events/types"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -59,6 +59,9 @@ async function collectQuest(
   postingKey: string,
   questId: string,
 ): Promise<string> {
+  if (!questId || questId.trim() === "") {
+    throw new Error(`Invalid quest ID for ${username}`)
+  }
   const payload = { quest_id: questId, "tx-hash": Math.random().toString(36).slice(2, 22) }
   const op: [string, Record<string, unknown>] = [
     "custom_json",
@@ -69,8 +72,15 @@ async function collectQuest(
       json:                   JSON.stringify(payload),
     },
   ]
-  const tx = await client.broadcast.sendOperations([op as any], PrivateKey.fromString(postingKey))
-  return tx.id
+  try {
+    const tx = await client.broadcast.sendOperations([op as any], PrivateKey.fromString(postingKey))
+    return tx.id
+  } catch (err) {
+    // RC was consumed by the failed broadcast; rethrow so caller can log it
+    throw new Error(
+      `Collect broadcast failed (RC consumed): ${err instanceof Error ? err.message : String(err)}`
+    )
+  }
 }
 
 async function startQuest(
@@ -79,6 +89,9 @@ async function startQuest(
   activeKey: string,
   slot: QuestBoardSlot,
 ): Promise<string> {
+  if (!slot.scrap_cost || slot.scrap_cost <= 0) {
+    throw new Error(`Invalid SCRAP cost for quest "${slot.name}": ${slot.scrap_cost}`)
+  }
   const hash = Math.random().toString(36).slice(2, 22)
   const memo = `terracore_quest_start-${slot.quest_type}-${slot.tier}-${hash}`
   const payload = {
@@ -95,8 +108,15 @@ async function startQuest(
       json:                   JSON.stringify(payload),
     },
   ]
-  const tx = await client.broadcast.sendOperations([op as any], PrivateKey.fromString(activeKey))
-  return tx.id
+  try {
+    const tx = await client.broadcast.sendOperations([op as any], PrivateKey.fromString(activeKey))
+    return tx.id
+  } catch (err) {
+    // RC was consumed by the failed broadcast; rethrow so caller can log it
+    throw new Error(
+      `Start broadcast failed (RC consumed): ${err instanceof Error ? err.message : String(err)}`
+    )
+  }
 }
 
 // ── Core action ───────────────────────────────────────────────────────────────
@@ -206,33 +226,73 @@ export async function* runAutoQuest(
           }
         }
 
-        // ── Start available quests (up to 3) ─────────────────────────────
-        for (const slot of availableSlots.slice(0, 3)) {
-          assertNotAborted(signal)
+        // ── Start available quests — pre-validate HE SCRAP balance ────────
+        const slotsToStart = availableSlots.slice(0, 3)
+        if (slotsToStart.length > 0) {
+          let heBalance = 0
           try {
-            const txId = await startQuest(client, acc.username, acc.active_key, slot)
-            yield {
-              type:     "action",
-              username: acc.username,
-              action:   "start",
-              quest:    slot.name,
-              status:   "ok",
-              message:  `Started T${slot.tier} → TX: ${txId.slice(0, 10)}...`,
-              txId,
-            }
-            totalStarted++
-            await sleep(1_500, signal)
+            assertNotAborted(signal)
+            heBalance = await fetchHiveEngineScrapBalance(acc.username)
           } catch (err) {
             if ((err as DOMException)?.name === "AbortError") throw err
             yield {
-              type:     "action",
+              type:     "rc-warning",
               username: acc.username,
-              action:   "start",
-              quest:    slot.name,
-              status:   "error",
-              message:  err instanceof Error ? err.message : "Broadcast failed",
+              message:  `Could not fetch HE SCRAP balance — skipping all quest starts to protect RC. (${err instanceof Error ? err.message : String(err)})`,
+            } as any
+          }
+
+          for (const slot of slotsToStart) {
+            assertNotAborted(signal)
+
+            // Guard: skip if balance is insufficient
+            if (heBalance < slot.scrap_cost) {
+              yield {
+                type:     "rc-warning",
+                username: acc.username,
+                message:  `Skipped "${slot.name}" T${slot.tier} — need ${slot.scrap_cost} SCRAP, have ${heBalance.toFixed(3)}`,
+                balance:  heBalance,
+                required: slot.scrap_cost,
+              } as any
+              yield {
+                type:     "action",
+                username: acc.username,
+                action:   "start",
+                quest:    slot.name,
+                status:   "error",
+                message:  `Insufficient SCRAP (have ${heBalance.toFixed(3)}, need ${slot.scrap_cost})`,
+              }
+              totalErrors++
+              continue
             }
-            totalErrors++
+
+            try {
+              const txId = await startQuest(client, acc.username, acc.active_key, slot)
+              // Deduct locally so subsequent slots in this loop see the updated balance
+              heBalance -= slot.scrap_cost
+              yield {
+                type:     "action",
+                username: acc.username,
+                action:   "start",
+                quest:    slot.name,
+                status:   "ok",
+                message:  `Started T${slot.tier} → TX: ${txId.slice(0, 10)}...`,
+                txId,
+              }
+              totalStarted++
+              await sleep(1_500, signal)
+            } catch (err) {
+              if ((err as DOMException)?.name === "AbortError") throw err
+              yield {
+                type:     "action",
+                username: acc.username,
+                action:   "start",
+                quest:    slot.name,
+                status:   "error",
+                message:  err instanceof Error ? err.message : "Broadcast failed",
+              }
+              totalErrors++
+            }
           }
         }
       } catch (err) {

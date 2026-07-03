@@ -93,12 +93,18 @@ export class BlockchainService {
 
   /**
    * Broadcast terracore_battle custom_json for each target.
+   * Wraps in try/catch to prevent RC loss on failed broadcasts.
    */
   async attack(
     username:   string,
     postingKey: string,
     targets:    string[],
   ): Promise<void> {
+    if (!targets || targets.length === 0) {
+      logInfo(`Attack | ${username} — no targets available, skipping`)
+      return
+    }
+
     const hash = txHash()
     const key  = PrivateKey.fromString(postingKey)
 
@@ -112,8 +118,16 @@ export class BlockchainService {
       },
     ])
 
-    await this.client.broadcast.sendOperations(ops as any, key)
-    logInfo(`Attack | ${username} → ${targets.join(", ")}`)
+    try {
+      await this.client.broadcast.sendOperations(ops as any, key)
+      logInfo(`Attack | ${username} → ${targets.join(", ")}`)
+    } catch (err) {
+      logError(
+        `Attack failed for ${username}: ${err instanceof Error ? err.message : String(err)} ` +
+        `— RC consumed regardless`,
+      )
+      // Don't rethrow; the RC is already consumed by the broadcast attempt
+    }
     await delay(settings.delays.betweenAttacks)
   }
 
@@ -151,12 +165,17 @@ export class BlockchainService {
 
   /**
    * Broadcast terracore_quest_collect custom_json (posting key).
+   * Wraps in try/catch to prevent RC loss on failed broadcasts.
    */
   async collectQuest(
     username:   string,
     postingKey: string,
     questId:    string,
   ): Promise<string> {
+    if (!questId || questId.trim() === "") {
+      throw new Error(`Invalid quest ID for ${username}`)
+    }
+
     const hash = txHash()
     const key  = PrivateKey.fromString(postingKey)
 
@@ -170,13 +189,22 @@ export class BlockchainService {
       },
     ]
 
-    const tx = await this.client.broadcast.sendOperations([op as any], key)
-    logInfo(`Collect | ${username} | quest: ${questId.slice(0, 8)}... | TX: ${tx.id.slice(0, 10)}...`)
-    return tx.id
+    try {
+      const tx = await this.client.broadcast.sendOperations([op as any], key)
+      logInfo(`Collect | ${username} | quest: ${questId.slice(0, 8)}... | TX: ${tx.id.slice(0, 10)}...`)
+      return tx.id
+    } catch (err) {
+      logError(
+        `Collect failed for ${username} (${questId.slice(0, 8)}...): ` +
+        `${err instanceof Error ? err.message : String(err)} — RC consumed regardless`,
+      )
+      throw err
+    }
   }
 
   /**
    * Broadcast ssc-mainnet-hive SCRAP transfer to start a quest (active key).
+   * Wraps in try/catch to prevent RC loss on failed broadcasts.
    */
   async startQuest(
     username:  string,
@@ -185,6 +213,10 @@ export class BlockchainService {
     tier:      string,
     scrapCost: number,
   ): Promise<string> {
+    if (scrapCost <= 0) {
+      throw new Error(`Invalid SCRAP cost for ${username}: ${scrapCost}`)
+    }
+
     const hash = txHash()
     const memo = `terracore_quest_start-${questType}-${tier}-${hash}`
     const key  = PrivateKey.fromString(activeKey)
@@ -203,9 +235,17 @@ export class BlockchainService {
       },
     ]
 
-    const tx = await this.client.broadcast.sendOperations([op as any], key)
-    logInfo(`Start  | ${username} | ${questType} T${tier} | TX: ${tx.id.slice(0, 10)}...`)
-    return tx.id
+    try {
+      const tx = await this.client.broadcast.sendOperations([op as any], key)
+      logInfo(`Start  | ${username} | ${questType} T${tier} | TX: ${tx.id.slice(0, 10)}...`)
+      return tx.id
+    } catch (err) {
+      logError(
+        `Start quest failed for ${username} (${questType} T${tier}): ` +
+        `${err instanceof Error ? err.message : String(err)} — RC consumed regardless`,
+      )
+      throw err
+    }
   }
 
   // ── Token Transfer ──────────────────────────────────────────────────────────
@@ -213,6 +253,7 @@ export class BlockchainService {
   /**
    * Transfer SCRAP to the main account via Hive Engine (active key).
    * Used at the end of each account's cycle to consolidate earnings.
+   * Wraps in try/catch to prevent RC loss on failed broadcasts.
    */
   async transferScrap(
     username:  string,
@@ -221,6 +262,13 @@ export class BlockchainService {
     quantity:  number,
     memo:      string,
   ): Promise<string> {
+    if (quantity <= 0) {
+      throw new Error(`Invalid transfer quantity for ${username}: ${quantity}`)
+    }
+    if (!to || to.trim() === "") {
+      throw new Error(`Invalid transfer recipient for ${username}`)
+    }
+
     const key = PrivateKey.fromString(activeKey)
 
     const op: [string, Record<string, unknown>] = [
@@ -237,8 +285,16 @@ export class BlockchainService {
       },
     ]
 
-    const tx = await this.client.broadcast.sendOperations([op as any], key)
-    logInfo(`Transfer | ${username} → ${to} | ${quantity.toFixed(8)} SCRAP | TX: ${tx.id.slice(0, 10)}...`)
-    return tx.id
+    try {
+      const tx = await this.client.broadcast.sendOperations([op as any], key)
+      logInfo(`Transfer | ${username} → ${to} | ${quantity.toFixed(8)} SCRAP | TX: ${tx.id.slice(0, 10)}...`)
+      return tx.id
+    } catch (err) {
+      logError(
+        `Transfer failed for ${username} → ${to} (${quantity.toFixed(8)} SCRAP): ` +
+        `${err instanceof Error ? err.message : String(err)} — RC consumed regardless`,
+      )
+      throw err
+    }
   }
 }

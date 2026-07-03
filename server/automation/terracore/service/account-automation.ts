@@ -6,6 +6,7 @@ import {
   getHiveEngineScrapBalance,
   type TerracoreQuest,
   type QuestBoardSlot,
+  type TerracorePlayer,
 } from "../../../shared/api/terracore"
 import { BlockchainService } from "./blockchain"
 import {
@@ -204,8 +205,9 @@ export class AccountAutomationService {
       }
 
       // Start every available quest — no per-cycle cap. As long as a board
-      // slot is available to start, start it.
-      for (const slot of available) {
+      // slot is available to start, start it. But first filter by HE SCRAP balance.
+      const affordableQuests = await this.filterQuestsByBalance(account, available, player)
+      for (const slot of affordableQuests) {
         const ok = await this.startQuest(account, slot)
         if (ok) result.started++
         else    result.errors++
@@ -280,6 +282,43 @@ export class AccountAutomationService {
   }
 
   // ── Quest helpers ──────────────────────────────────────────────────────────
+
+  /**
+   * Fetch HE SCRAP balance and validate all available quests have sufficient funds.
+   * Returns filtered list of quests that can actually be started.
+   * Logs warnings for quests skipped due to insufficient balance.
+   */
+  private async filterQuestsByBalance(
+    account: AccountConfig,
+    available: QuestBoardSlot[],
+    player: TerracorePlayer,
+  ): Promise<QuestBoardSlot[]> {
+    if (available.length === 0) return []
+
+    try {
+      const heBalance = await getHiveEngineScrapBalance(account.username)
+      logInfo(
+        `[quest validation] ${account.username} — HE balance: ${heBalance.toFixed(3)} SCRAP`,
+      )
+
+      const affordable = available.filter((slot) => {
+        if (heBalance >= slot.scrap_cost) {
+          return true
+        }
+        logWarning(
+          `Quest "${slot.name}" (T${slot.tier}) requires ${slot.scrap_cost.toFixed(3)} SCRAP ` +
+          `but only ${heBalance.toFixed(3)} available — skipping`,
+        )
+        return false
+      })
+
+      return affordable
+    } catch (err) {
+      logError(`Failed to fetch HE balance for ${account.username}: ${err instanceof Error ? err.message : String(err)}`)
+      // On error, return empty to avoid starting quests with unknown balance
+      return []
+    }
+  }
 
   private async collectQuest(account: AccountConfig, quest: TerracoreQuest): Promise<boolean> {
     try {

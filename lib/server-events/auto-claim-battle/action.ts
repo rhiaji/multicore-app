@@ -160,48 +160,85 @@ export async function* runAutoClaimBattle(
       const shouldAttack = settings.attacks.enabled && attacksAvail >= settings.attacks.minimumRequired
 
       if (shouldAttack) {
-        try {
-          assertNotAborted(signal)
-          const targets  = await fetchBattleTargets(player.stats?.damage ?? 0)
-          const toAttack = targets.slice(0, 2)
-
+        // Guard: skip attack entirely if player has no attacks left
+        if (attacksAvail === 0) {
           yield {
             type:     "account-action",
             username: account.username,
-            action:   "attacks-start",
-            count:    toAttack.length,
+            action:   "attacks-skip",
+            reason:   "no attacks available — broadcast skipped to protect RC",
           }
+        } else {
+          try {
+            assertNotAborted(signal)
+            const targets  = await fetchBattleTargets(player.stats?.damage ?? 0)
+            const toAttack = targets.slice(0, 2)
 
-          const key        = PrivateKey.fromString(account.posting_key)
-          const attackOps: [string, Record<string, unknown>][] = toAttack.map((t) => [
-            "custom_json",
-            {
-              required_auths:         [],
-              required_posting_auths: [account.username],
-              id:   "terracore_battle",
-              json: JSON.stringify({ target: t.username }),
-            },
-          ])
+            if (toAttack.length === 0) {
+              yield {
+                type:     "account-action",
+                username: account.username,
+                action:   "attacks-skip",
+                reason:   "no valid targets found",
+              }
+            } else {
+              yield {
+                type:     "account-action",
+                username: account.username,
+                action:   "attacks-start",
+                count:    toAttack.length,
+              }
 
-          assertNotAborted(signal)
-          await hiveClient.broadcast.sendOperations(attackOps as any, key)
-          await sleep(DELAYS.betweenAttacks, signal)
+              const key        = PrivateKey.fromString(account.posting_key)
+              const attackOps: [string, Record<string, unknown>][] = toAttack.map((t) => [
+                "custom_json",
+                {
+                  required_auths:         [],
+                  required_posting_auths: [account.username],
+                  id:   "terracore_battle",
+                  json: JSON.stringify({ target: t.username }),
+                },
+              ])
 
-          totalAttacks += toAttack.length
-          yield {
-            type:     "account-action",
-            username: account.username,
-            action:   "attacks-done",
-            count:    toAttack.length,
-            targets:  toAttack.map((t) => t.username),
-          }
-        } catch (err) {
-          if ((err as DOMException)?.name === "AbortError") throw err
-          yield {
-            type:     "account-action",
-            username: account.username,
-            action:   "attacks-error",
-            message:  err instanceof Error ? err.message : String(err),
+              assertNotAborted(signal)
+              try {
+                await hiveClient.broadcast.sendOperations(attackOps as any, key)
+              } catch (broadcastErr) {
+                if ((broadcastErr as DOMException)?.name === "AbortError") throw broadcastErr
+                // RC is consumed even on broadcast failure — surface it clearly
+                yield {
+                  type:     "rc-warning",
+                  username: account.username,
+                  message:  `Attack broadcast failed (RC consumed regardless): ${broadcastErr instanceof Error ? broadcastErr.message : String(broadcastErr)}`,
+                } as any
+                yield {
+                  type:     "account-action",
+                  username: account.username,
+                  action:   "attacks-error",
+                  message:  broadcastErr instanceof Error ? broadcastErr.message : String(broadcastErr),
+                }
+                await sleep(DELAYS.betweenAccounts, signal)
+                continue
+              }
+              await sleep(DELAYS.betweenAttacks, signal)
+
+              totalAttacks += toAttack.length
+              yield {
+                type:     "account-action",
+                username: account.username,
+                action:   "attacks-done",
+                count:    toAttack.length,
+                targets:  toAttack.map((t) => t.username),
+              }
+            }
+          } catch (err) {
+            if ((err as DOMException)?.name === "AbortError") throw err
+            yield {
+              type:     "account-action",
+              username: account.username,
+              action:   "attacks-error",
+              message:  err instanceof Error ? err.message : String(err),
+            }
           }
         }
       } else if (!settings.attacks.enabled) {
@@ -235,7 +272,18 @@ export async function* runAutoClaimBattle(
 
         const key = PrivateKey.fromString(account.posting_key)
         assertNotAborted(signal)
-        const tx  = await hiveClient.broadcast.sendOperations([claimOp] as any, key)
+        let tx: { id: string }
+        try {
+          tx = await hiveClient.broadcast.sendOperations([claimOp] as any, key)
+        } catch (broadcastErr) {
+          if ((broadcastErr as DOMException)?.name === "AbortError") throw broadcastErr
+          yield {
+            type:     "rc-warning",
+            username: account.username,
+            message:  `Claim broadcast failed (RC consumed regardless): ${broadcastErr instanceof Error ? broadcastErr.message : String(broadcastErr)}`,
+          } as any
+          throw broadcastErr
+        }
 
         yield {
           type:     "account-action",
