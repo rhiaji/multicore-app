@@ -3,7 +3,7 @@
 
 export interface BotSettings {
   scrapRequirement: {
-    enabled:    boolean
+    enabled: boolean
     multiplier: number
   }
   manualClaim: {
@@ -11,21 +11,21 @@ export interface BotSettings {
   }
   transfer: {
     /** Set to true to sweep SCRAP to TERRACORE_ACCOUNT_MAIN after each claim cycle. */
-    enabled:        boolean
+    enabled: boolean
     /** Amount of SCRAP to leave in each sub-account (not swept). */
     scrapAllowance: number
     /** Memo attached to the HE token transfer. */
-    memo:           string
+    memo: string
   }
   delays: {
     /** Between individual attack broadcasts (ms). */
-    betweenAttacks:  number
+    betweenAttacks: number
     /** Between processing each account (ms). */
     betweenAccounts: number
     /** Between full loop cycles (ms). */
-    betweenLoops:    number
+    betweenLoops: number
     /** Before a retry attempt — multiplied by attempt number (ms). */
-    retryDelay:      number
+    retryDelay: number
     /**
      * How long to wait after a successful claim before reading the
      * Hive Engine SCRAP balance. Allows the mint to propagate on-chain.
@@ -34,14 +34,14 @@ export interface BotSettings {
     claimPropagation: number
   }
   attacks: {
-    enabled:         boolean
+    enabled: boolean
     minimumRequired: number
   }
 }
 
 const settings: BotSettings = {
   scrapRequirement: {
-    enabled:    true,
+    enabled: true,
     multiplier: 4,
   },
 
@@ -51,22 +51,22 @@ const settings: BotSettings = {
 
   transfer: {
     // Enable SCRAP sweeping to main account after each claim cycle
-    enabled:        false,
+    enabled: false,
     // Leave this many SCRAP in each sub-account
-    scrapAllowance: 200,
-    memo:           "terracore auto-transfer",
+    scrapAllowance: 1000,
+    memo: "terracore auto-transfer",
   },
 
   delays: {
-    betweenAttacks:   1_500,
-    betweenAccounts:  2_000,
-    betweenLoops:     5_000,
-    retryDelay:       1_500,
+    betweenAttacks: 1_500,
+    betweenAccounts: 2_000,
+    betweenLoops: 5_000,
+    retryDelay: 1_500,
     claimPropagation: 3_000,
   },
 
   attacks: {
-    enabled:         true,
+    enabled: true,
     minimumRequired: 2,
   },
 }
