@@ -89,7 +89,7 @@ const settings: BotSettings = {
   },
 
   transfer: {
-    enabled: true,
+    enabled: false,
     scrapAllowance: 1000,
     memo: "Multicore Bot consolidation",
   },
