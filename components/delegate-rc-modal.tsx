@@ -65,9 +65,48 @@ export function DelegateRcModal({
   // Mass delegation: selected accounts
   const otherUsernames = allUsernames.filter((u) => u !== connectedUser?.username)
   const [selectedAccounts, setSelectedAccounts] = useState<Set<string>>(new Set())
+  const [accountRc, setAccountRc] = useState<Map<string, { current: number; max: number; percent: number }>>(new Map())
+  const [rcLoading, setRcLoading] = useState(false)
   const allSelected = otherUsernames.length > 0 && selectedAccounts.size === otherUsernames.length
   const someSelected = selectedAccounts.size > 0 && !allSelected
   const batchCount = Math.ceil(selectedAccounts.size / MAX_DELEGATEES_PER_TX)
+
+  // Load the live RC values used to choose mass-delegation recipients.
+  useEffect(() => {
+    if (!open || tab !== "mass" || otherUsernames.length === 0) return
+
+    let cancelled = false
+    setRcLoading(true)
+    fetch("https://api.hive.blog/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "rc_api.find_rc_accounts",
+        params: { accounts: otherUsernames },
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return
+        const next = new Map<string, { current: number; max: number; percent: number }>()
+        for (const account of data?.result?.rc_accounts ?? []) {
+          const current = Number(account.rc_manabar?.current_mana ?? 0)
+          const max = Number(account.max_rc ?? 0)
+          next.set(account.account, { current, max, percent: max > 0 ? Math.min(100, (current / max) * 100) : 0 })
+        }
+        setAccountRc(next)
+      })
+      .catch(() => {
+        if (!cancelled) setAccountRc(new Map())
+      })
+      .finally(() => {
+        if (!cancelled) setRcLoading(false)
+      })
+
+    return () => { cancelled = true }
+  }, [open, tab, otherUsernames.join(",")])
 
   // Derived
   const rawRc = amountGrc ? Math.floor(parseFloat(amountGrc) * G_RC) : 0
@@ -434,6 +473,25 @@ export function DelegateRcModal({
                             onClick={() => toggleAccount(username)}
                           >
                             @{username}
+                          </span>
+                          <span className="flex flex-col items-end gap-0.5 shrink-0" aria-label={`RC for ${username}`}>
+                            {rcLoading && !accountRc.has(username) ? (
+                              <Loader2 className="size-3 animate-spin text-muted-foreground" />
+                            ) : accountRc.has(username) ? (
+                              <>
+                                <span className={cn(
+                                  "text-[10px] font-semibold tabular-nums",
+                                  accountRc.get(username)!.percent < 20 ? "text-destructive" : accountRc.get(username)!.percent < 50 ? "text-amber-400" : "text-green-400",
+                                )}>
+                                  {accountRc.get(username)!.percent.toFixed(1)}%
+                                </span>
+                                <span className="text-[9px] font-mono text-muted-foreground">
+                                  {formatRcValue(accountRc.get(username)!.current)} / {formatRcValue(accountRc.get(username)!.max)}
+                                </span>
+                              </>
+                            ) : (
+                              <span className="text-[9px] text-muted-foreground">RC unavailable</span>
+                            )}
                           </span>
                         </label>
                       )
